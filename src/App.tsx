@@ -1,4 +1,4 @@
-import { Select, Stack, OutlinedInput, IconButton, Typography, MenuItem, FormControl, InputLabel, TextField, InputAdornment } from '@mui/material'
+import { Select, Stack, OutlinedInput, IconButton, Typography, MenuItem, FormControl, InputLabel, InputAdornment } from '@mui/material'
 import { SyncAlt } from '@mui/icons-material'
 import { useState, useEffect, ChangeEvent } from 'react'
 import { SelectChangeEvent } from '@mui/material/Select';
@@ -23,42 +23,39 @@ const App: React.FC = () => {
       const response = await fetchAllCurrencies();
       setCurrenciesList(Object.keys(response.conversion_rates));
     })();
-  }, [])
+  }, []);
 
-  //Select Currency
-  const handleFromCurrencyChange = (event: SelectChangeEvent) => {
+  useEffect(() => {
+    (async () => {
+      if (fromCurrency && toCurrency) {
+        const data = await fetchConversionRates(fromCurrency, toCurrency);
+        setConversionRate(data.conversion_rate);
+        setToCurrencyValue(fromCurrencyValue * data.conversion_rate);
+      }
+    })();
+  }, [fromCurrency, toCurrency, fromCurrencyValue]);
+
+  // Select Currency
+  const handleFromCurrencyChange = (event: SelectChangeEvent<string>) => {
     setFromCurrency(event.target.value as string);
-  }
+  };
 
-  const handleToCurrencyChange = (event: SelectChangeEvent) => {
+  const handleToCurrencyChange = (event: SelectChangeEvent<string>) => {
     setToCurrency(event.target.value as string);
-  }
+  };
 
-  //Change Values
+  // Change Values
   const handleChangeFromCurrencyValue = (e: ChangeEvent<HTMLInputElement>) => {
-    if (fromCurrencyValue.toString().length <= 10) {
-      setFromCurrencyValue(+e.target.value);
-    }
-    convertCurrencies();
-  }
+    const value = +e.target.value;
+    setFromCurrencyValue(value);
+    setToCurrencyValue(value * conversionRate);
+  };
 
-  const handleChangeToCurrencyValue = (e: ChangeEvent<HTMLInputElement>) => {
-    if (toCurrencyValue.toString().length <= 10) {
-      setToCurrencyValue(+e.target.value);
-    }
-    convertCurrencies();
-  }
-
-  //Swap currencies
+  // Swap currencies
   const handleSwapCurrencies = () => {
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
-  }
-
-  const convertCurrencies = async () => {
-    const data = await fetchConversionRates(fromCurrency, toCurrency);
-    setConversionRate(data.conversion_rate);
-  }
+  };
 
   return (
     <div className={styles.app}>
@@ -92,12 +89,11 @@ const App: React.FC = () => {
                 </FormControl>
                 <OutlinedInput
                   endAdornment={<InputAdornment position="end">{fromCurrency}</InputAdornment>}
-                  type='number'
-                  inputMode='numeric'
-                  inputProps={{ maxLength: 10 }}
-                  disabled={!Boolean(toCurrency) || !Boolean(fromCurrency)}
+                  type="text"
+                  inputMode="numeric"
+                  disabled={!toCurrency || !fromCurrency}
                   onChange={handleChangeFromCurrencyValue}
-                  value={toCurrencyValue / conversionRate}
+                  defaultValue={fromCurrencyValue}
                 />
               </Stack>
               <IconButton size='large' onClick={handleSwapCurrencies}>
@@ -122,11 +118,11 @@ const App: React.FC = () => {
                 </FormControl>
                 <OutlinedInput
                   endAdornment={<InputAdornment position="end">{toCurrency}</InputAdornment>}
-                  type='number'
-                  inputMode='numeric'
-                  disabled={!Boolean(toCurrency) || !Boolean(fromCurrency)}
-                  onChange={handleChangeToCurrencyValue}
-                  value={fromCurrencyValue * conversionRate}
+                  type="number"
+                  inputMode="numeric"
+                  disabled={!toCurrency || !fromCurrency}
+                  value={toCurrencyValue.toFixed(2)}
+                  readOnly
                 />
               </Stack>
             </Stack>
